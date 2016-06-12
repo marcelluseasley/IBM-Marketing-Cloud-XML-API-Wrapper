@@ -131,7 +131,7 @@ class IBMarketingCloud(object):
         else:
             print "not authenticated"
 
-    def addRecipient(self,Recipient):
+    def addRecipient(self, Recipient):
         pass
 
 
