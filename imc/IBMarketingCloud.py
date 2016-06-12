@@ -15,6 +15,8 @@ from lxml import objectify
 from lxml.etree import Element
 from lxml.etree import SubElement
 
+from parameters.RecipientOptions import Recipient
+
 
 
 
@@ -129,10 +131,17 @@ class IBMarketingCloud(object):
         else:
             print "not authenticated"
 
+    def addRecipient(self,Recipient):
+        pass
+
 
 
 inst = IBMarketingCloud()
 inst._runapi()
 print(inst.authenticate(IBMarketingCloud.AUTH_OAUTH, r"c:\code\ibmapi_config_test.ini"))
-print(inst._runapi())
+
+ro = Recipient(123)
+print(ro.listId)
+
+inst.addRecipient(ro)
 
