@@ -111,7 +111,7 @@ class IBMarketingCloud(object):
             if self.auth_method is self.AUTH_LEGACY:
                 #set legacy URL and jsession
                 paramstring = {"jsessionid": self.jsessionid, "xml": xml}
-                r = requests.post(URL,params)
+                r = requests.post(self.URL, paramstring)
                 if r.status_code is 200:
                     return r.text
                 else:
