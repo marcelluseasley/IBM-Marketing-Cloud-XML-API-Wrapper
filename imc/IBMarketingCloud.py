@@ -38,7 +38,7 @@ class IBMarketingCloud(object):
         self.auth_method = None
         self.jsessionid = None
         self.URL = None
-
+        self.authenticated = False
 
     def authenticate(self,auth_method=AUTH_LEGACY, config_file=None):
 
@@ -69,7 +69,7 @@ class IBMarketingCloud(object):
             if r.status_code is 200:
                 root = objectify.fromstring(r.text)
                 self.jsessionid = root.Body.RESULT.SESSIONID.text
-
+                self.authenticated = True
                 return self.jsessionid
             else:
                 return False
@@ -101,14 +101,38 @@ class IBMarketingCloud(object):
                 self.pod = pod
                 self.URL = r"https://api{}.silverpop.com/XMLAPI".format(pod)
                 self.auth_method = self.AUTH_OAUTH
+                self.authenticated = True
                 return d['expires_in']
             else:
                 return False
 
+    def _runapi(self,xml=None):
+        if self.authenticated:
+            if self.auth_method is self.AUTH_LEGACY:
+                #set legacy URL and jsession
+                paramstring = {"jsessionid": self.jsessionid, "xml": xml}
+                r = requests.post(URL,params)
+                if r.status_code is 200:
+                    return r.text
+                else:
+                    return r.status_code
+
+            elif self.auth_method is self.AUTH_OAUTH:
+                #set oauth URL
+                headers = {'Authorization': "Bearer " + self.access_token}
+                data = {'xml': xml}
+                r = requests.post(self.URL, headers=headers, data=data)
+                if r.status_code  is 200:
+                    return r.text
+                else:
+                    return r.status_code
+        else:
+            print "not authenticated"
 
 
 
 inst = IBMarketingCloud()
+inst._runapi()
 print(inst.authenticate(IBMarketingCloud.AUTH_OAUTH, r"c:\code\ibmapi_config_test.ini"))
-print(inst.URL)
+print(inst._runapi())
 
