@@ -11,8 +11,10 @@ import json
 import requests
 
 from lxml import etree
+from lxml import objectify
 from lxml.etree import Element
 from lxml.etree import SubElement
+
 
 
 
@@ -46,9 +48,36 @@ class IBMarketingCloud(object):
         config.read(config_file)
 
         if self.auth_method is self.AUTH_LEGACY:
-            pass
+            pod = config.get('MARKETING_CLOUD_LEGACY', 'Pod')
+            self.pod = pod
+            self.URL = r"https://api{}.silverpop.com/XMLAPI".format(pod)
 
-        if self.auth_method is self.AUTH_OAUTH:
+            envelope = Element("Envelope")
+            body = SubElement(envelope, "Body")
+            login = SubElement(body, "Login")
+
+            username = SubElement(login, "USERNAME")
+            username.text = config.get('MARKETING_CLOUD_LEGACY', 'Username')
+            password = SubElement(login, "PASSWORD")
+            password.text = config.get('MARKETING_CLOUD_LEGACY', 'Password')
+
+            loginXML = etree.tostring(envelope, encoding="UTF-8")
+
+            #construct paramstring
+            paramstring = {'xml': loginXML}
+            r = requests.post(self.URL, params=paramstring)
+            if r.status_code is 200:
+                root = objectify.fromstring(r.text)
+                self.jsessionid = root.Body.RESULT.SESSIONID.text
+
+                return self.jsessionid
+            else:
+                return False
+
+
+
+
+        elif self.auth_method is self.AUTH_OAUTH:
             client_id = config.get('MARKETING_CLOUD_OAUTH2', 'ClientID')
             client_secret = config.get('MARKETING_CLOUD_OAUTH2', 'ClientSecret')
             refresh_token = config.get('MARKETING_CLOUD_OAUTH2', 'RefreshToken')
@@ -66,7 +95,7 @@ class IBMarketingCloud(object):
                  "refresh_token" : refresh_token}
 
             r = requests.post(oauth_url,data)
-            if r.status_code == 200:
+            if r.status_code is 200:
                 d = json.loads(r.text)
                 self.access_token = d['access_token']
                 self.pod = pod
@@ -76,17 +105,8 @@ class IBMarketingCloud(object):
             else:
                 return False
 
-        elif self.auth_method is self.AUTH_LEGACY:
-            envelope = etree.Element("Envelope")
-            body = etree.SubElement(envelope, "Body")
-            login = etree.SubElement(body, "Login")
 
-            username = etree.SubElement(login, "USERNAME")
 
-            username.text = config.get('MARKETING_CLOUD_LEGACY', 'Username')
-
-            password = etree.SubElement(login, "PASSWORD")
-            password.text = config.get('MARKETING_CLOUD_LEGACY', 'Password')
 
 inst = IBMarketingCloud()
 print(inst.authenticate(IBMarketingCloud.AUTH_OAUTH, r"c:\code\ibmapi_config_test.ini"))
