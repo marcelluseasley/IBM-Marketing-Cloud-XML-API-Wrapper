@@ -15,17 +15,12 @@ from lxml import objectify
 from lxml.etree import Element
 from lxml.etree import SubElement
 
-from parameters.RecipientOptions import Recipient
-
-
-
 
 class IBMarketingCloud(object):
 
     # constants
     AUTH_LEGACY = 1
     AUTH_OAUTH = 2
-
 
     # variables will be set
     # - pod
@@ -42,9 +37,9 @@ class IBMarketingCloud(object):
         self.URL = None
         self.authenticated = False
 
-    def authenticate(self,auth_method=AUTH_LEGACY, config_file=None):
+    def authenticate(self, auth_method=AUTH_LEGACY, config_file=None):
 
-        self.auth_method=auth_method
+        self.auth_method= auth_method
 
         config = ConfigParser.ConfigParser()
         config.read(config_file)
@@ -69,15 +64,26 @@ class IBMarketingCloud(object):
             paramstring = {'xml': loginXML}
             r = requests.post(self.URL, params=paramstring)
             if r.status_code is 200:
+                ar = ApiResult()
                 root = objectify.fromstring(r.text)
-                self.jsessionid = root.Body.RESULT.SESSIONID.text
-                self.authenticated = True
-                return self.jsessionid
+                print(etree.tostring(root, pretty_print=True))
+
+                if root.Body.RESULT.SUCCESS.text == "false":
+
+                    #construct ApiResult
+
+                    ar.status = root.Body.RESULT.SUCCESS.text
+                    ar.message = root.Body.Fault.FaultString.text
+                    return ar
+                elif root.Body.RESULT.SUCCESS.text == "true":
+                    ar.status = root.Body.RESULT.SUCCESS.text
+                    ar.message = root.Body.RESULT.SESSIONID
+                    self.jsessionid = root.Body.RESULT.SESSIONID
+                    self.authenticated = True
+
+                    return ar
             else:
                 return False
-
-
-
 
         elif self.auth_method is self.AUTH_OAUTH:
             client_id = config.get('MARKETING_CLOUD_OAUTH2', 'ClientID')
@@ -89,12 +95,12 @@ class IBMarketingCloud(object):
             if None in (client_id, client_secret, refresh_token, pod):
                 print("Check config file.")
 
-            oauth_url = "https://api" +pod+ ".silverpop.com/oauth/token"
+            oauth_url = "https://api" + pod + ".silverpop.com/oauth/token"
 
             data = { "grant_type": grant_type,
                  "client_id" : client_id,
-                 "client_secret" : client_secret,
-                 "refresh_token" : refresh_token}
+                 "client_secret": client_secret,
+                 "refresh_token": refresh_token}
 
             r = requests.post(oauth_url,data)
             if r.status_code is 200:
@@ -108,7 +114,7 @@ class IBMarketingCloud(object):
             else:
                 return False
 
-    def _runapi(self,xml=None):
+    def _runapi(self, xml=None):
         if self.authenticated:
             if self.auth_method is self.AUTH_LEGACY:
                 #set legacy URL and jsession
@@ -124,24 +130,123 @@ class IBMarketingCloud(object):
                 headers = {'Authorization': "Bearer " + self.access_token}
                 data = {'xml': xml}
                 r = requests.post(self.URL, headers=headers, data=data)
-                if r.status_code  is 200:
+                if r.status_code is 200:
                     return r.text
                 else:
                     return r.status_code
         else:
             print "not authenticated"
 
-    def addRecipient(self, Recipient):
-        pass
+    def addRecipient(self, listid=None, createdfrom=None, sendautoreply=False,
+                     updateiffound=False, allowhtml=False, visitorkey=None,
+                     contactlists=None, syncfields=None, columns=None):
+
+        if None in (listid, createdfrom, columns):
+            return False
+
+        envelopeNode = Element("Envelope")
+        bodyNode = SubElement(envelopeNode, "Body")
+        addRecipientNode = SubElement(bodyNode, "AddRecipient")
+
+        listIdNode = SubElement(addRecipientNode, "LIST_ID")
+        listIdNode.text = listid
+        createdfromNode = SubElement(addRecipientNode, "CREATED_FROM")
+        createdfromNode.text = createdfrom
+
+        if sendautoreply:
+            sendautoreplyNode = SubElement(addRecipientNode, "SEND_AUTOREPLY")
+            sendautoreplyNode.text = sendautoreply
+
+        if updateiffound:
+            updateiffoundNode = SubElement(addRecipientNode, "UPDATE_IF_FOUND")
+            updateiffoundNode.text = updateiffound
+
+        if allowhtml:
+            allowhtmlNode = SubElement(addRecipientNode, "ALLOW_HTML")
+            allowhtmlNode.text = allowhtml
+
+        if visitorkey:
+            visitorkeyNode = SubElement(addRecipientNode, "VISITOR_KEY")
+            visitorkeyNode.text = visitorkey
+
+        if contactlists:
+            if isinstance(contactlists, list) or isinstance(contactlists, tuple):
+                contactlistsNode = SubElement(addRecipientNode, "CONTACT_LISTS")
+                clists=""
+                for i in len(contactlists):
+                    clists += "<CONTACT_LIST_ID>{}</CONTACT_LIST_ID>".format(i)
+
+                contactlistsNode.text = clists
+
+        if syncfields:
+            if isinstance(syncfields, dict):
+                syncfieldsNode = SubElement(addRecipientNode, "SYNC_FIELDS")
+                sfields = ""
+                for name, value in syncfields.items():
+                    sfields += """<SYNC_FIELD>
+                                <NAME>{}</NAME>
+                                <VALUE>{}</VALUE>
+                                </SYNC_FIELD>""".format(name,value)
+                syncfieldsNode.text = sfields
+
+        if columns:
+            if isinstance(columns, dict):
+                columnsNode = SubElement(addRecipientNode,"COLUMN")
+                scolumns = ""
+                for name, value in columns.items():
+                    scolumns += """<NAME>{}</NAME>
+                                    <VALUE>{}</VALUE>""".format(name, value)
+                columnsNode.text = scolumns
+
+        addrecipientxml = etree.tostring(envelopeNode, pretty_print=True, encoding="UTF-8")
+
+        print(addrecipientxml)
 
 
 
-inst = IBMarketingCloud()
-inst._runapi()
-print(inst.authenticate(IBMarketingCloud.AUTH_OAUTH, r"c:\code\ibmapi_config_test.ini"))
 
-ro = Recipient(123)
-print(ro.listId)
 
-inst.addRecipient(ro)
+
+
+
+
+class ApiResult(object):
+
+    def __init__(self):
+        self._status = None
+        self._message = None
+
+    def __str__(self):
+        return self._status
+
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        self._status = value
+
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, value):
+        self._message = value
+
+
+
+if __name__ == "__main__":
+    inst = IBMarketingCloud()
+
+    apiresult = inst.authenticate(IBMarketingCloud.AUTH_LEGACY, r"c:\code\ibmapi_config_test.ini")
+
+    if apiresult.status == "true":
+        print "api result message: {}".format(apiresult.message)
+
+    inst.addRecipient
+
+
 
