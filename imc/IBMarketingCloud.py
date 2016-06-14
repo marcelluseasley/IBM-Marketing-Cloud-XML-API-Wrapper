@@ -37,7 +37,7 @@ class IBMCloud(object):
         self.URL = None
         self.authenticated = False
 
-    def authenticate(self, auth_method=AUTH_LEGACY, config_file=None):
+    def login(self, auth_method=AUTH_LEGACY, config_file=None):
 
         self.auth_method = auth_method
 
@@ -191,6 +191,14 @@ class IBMCloud(object):
 
         addrecipientxml = etree.tostring(envelopeNode)
         return self._runapi(addrecipientxml)
+
+    def logout(self):
+        envelope = Element("Envelope")
+        body = SubElement(envelope, "Body")
+        login = SubElement(body, "Logout")
+        logoutXML = etree.tostring(envelope, encoding="UTF-8")
+
+        return self._runapi(logoutXML)
 
 
 
