@@ -1,0 +1,107 @@
+##### Contact XML Interfaces
+    The following section defines the interfaces provided to manage the most common Mailing and Database
+    management actions. We refer to these as Contact Actions because each relates directly to one or more
+    Contacts.
+
+### Mailing Management Interfaces
+    Mailing Management interfaces allow you to invoke Engage functions directly related to particular mailings.
+    There are two operations in this category: SendMailing and ForwardToFriend.
+
+        SendMailing
+        ForwardToFrield
+        GetContactMailingDetails
+        PurgeData
+
+### Database Management Interfaces - Contact
+    Database Management Interfaces allow you to invoke Engage functions directly related to database contacts.
+
+        AddRecipient
+        DoubleOptInRecipient
+        UpdateRecipient
+        OptOutRecipient
+        SelectRecipientData
+
+##### User XML Interfaces
+    This section defines the automation interfaces for importing and/or updating databases from external files. We
+    refer to these as User Actions.
+
+### Database Management Interfaces - User
+
+        ImportList
+        ExportList
+        AddListColumn
+        GetListMetaData
+        ListRecipientMailings
+        RemoveRecipient
+        GetLists
+        CreateTable
+        JoinTable
+        InsertUpdateRelationalTable
+        DeleteRelationalTableData
+        ImportTable
+        ExportTable
+        PurgeTable
+        DeleteTable
+        CreateContactList
+        AddContactToContactList
+        AddContactToProgram
+        CreateQuery
+        CalculateQuery
+        SetColumnValue
+
+### Automation - User
+    Engage supports two great Programs APIs that allow you to discover what Programs are available to a given
+    database and also how an individual contact has interacted with a program.
+
+
+        GetPrograms
+        GetProgramsByContact
+
+### Scoring Models - User
+    Engage supports two great Scoring Model APIs that allow you to discover what Scoring Models are available to a
+    given database and also what scores an individual contact has within that Scoring Model.
+
+
+        GetScoringModels
+        GetContactScores
+
+### Reporting Interfaces - User
+    Engage archives mailing tracking data after 450 days by default. You can modify this setting to reduce the
+    number of days before archiving, but 450 is the maximum setting. For Autoresponders, if the SEND or ACTION
+    date ranges specified are greater than 450 days (or the number of days configured for archiving), you will receive
+    an error message (returned from the call) specifying that the mailing was archived. If the date range spans both
+    archived and available data for the mailing, Engage will return only the data available and will not return archived
+    data.
+    If your Organization will frequently requests data older than 30-60 days, we recommend leaving the archive
+    setting at 450 days. As a best practice, try to refrain from requesting data older than one year to avoid including
+    archived data in an export date range.
+
+        RawRecipientDataExport
+        WebTrackingDataExport
+        GetReportIdByDate
+        GetSentMailingsForOrg
+        GetSentMailingsForUser
+        GetSentMailingsForList
+        GetAggregateTrackingForMailing
+        GetAggregateTrackingForOrg
+        GetAggregateTrackingForUser
+        GetJobStatus
+        DeleteJob
+
+### Mailing Management Interfaces - User
+
+        SaveMailing
+        ScheduleMailing
+        PreviewMailing
+        GetMessageGroupDetails
+        AddDCRuleset
+        ImportDCRuleset
+        ExportDCRuleset
+        ListDCRulesetsForMailing
+        GetDCRuleset
+        ReplaceDCRuleset
+        ValidateDCRuleset
+        DeleteDCRuleset
+        GetMailingTemplates
+        ExportMailingTemplate
+
