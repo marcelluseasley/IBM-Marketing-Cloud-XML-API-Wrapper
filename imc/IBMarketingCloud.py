@@ -16,7 +16,7 @@ from lxml.etree import Element
 from lxml.etree import SubElement
 
 
-class IBMarketingCloud(object):
+class IBMCloud(object):
 
     # constants
     AUTH_LEGACY = 1
@@ -39,7 +39,7 @@ class IBMarketingCloud(object):
 
     def authenticate(self, auth_method=AUTH_LEGACY, config_file=None):
 
-        self.auth_method= auth_method
+        self.auth_method = auth_method
 
         config = ConfigParser.ConfigParser()
         config.read(config_file)
@@ -64,23 +64,15 @@ class IBMarketingCloud(object):
             paramstring = {'xml': loginXML}
             r = requests.post(self.URL, params=paramstring)
             if r.status_code is 200:
-                ar = ApiResult()
-                root = objectify.fromstring(r.text)
+                ar = ApiResult(r)
+                root = objectify.fromstring(ar.message)
                 print(etree.tostring(root, pretty_print=True))
 
                 if root.Body.RESULT.SUCCESS.text == "false":
-
-                    #construct ApiResult
-
-                    ar.status = root.Body.RESULT.SUCCESS.text
-                    ar.message = root.Body.Fault.FaultString.text
                     return ar
                 elif root.Body.RESULT.SUCCESS.text == "true":
-                    ar.status = root.Body.RESULT.SUCCESS.text
-                    ar.message = root.Body.RESULT.SESSIONID
                     self.jsessionid = root.Body.RESULT.SESSIONID
                     self.authenticated = True
-
                     return ar
             else:
                 return False
@@ -97,12 +89,12 @@ class IBMarketingCloud(object):
 
             oauth_url = "https://api" + pod + ".silverpop.com/oauth/token"
 
-            data = { "grant_type": grant_type,
-                 "client_id" : client_id,
-                 "client_secret": client_secret,
-                 "refresh_token": refresh_token}
+            data = {"grant_type": grant_type,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": refresh_token}
 
-            r = requests.post(oauth_url,data)
+            r = requests.post(oauth_url, data)
             if r.status_code is 200:
                 d = json.loads(r.text)
                 self.access_token = d['access_token']
@@ -116,30 +108,29 @@ class IBMarketingCloud(object):
 
     def _runapi(self, xml=None):
         if self.authenticated:
+            xml = xml.replace('&lt;', '<').replace('&gt;', '>')
             if self.auth_method is self.AUTH_LEGACY:
                 #set legacy URL and jsession
                 paramstring = {"jsessionid": self.jsessionid, "xml": xml}
                 r = requests.post(self.URL, paramstring)
-                if r.status_code is 200:
-                    return r.text
-                else:
-                    return r.status_code
+                return ApiResult(r)
+
 
             elif self.auth_method is self.AUTH_OAUTH:
                 #set oauth URL
                 headers = {'Authorization': "Bearer " + self.access_token}
                 data = {'xml': xml}
                 r = requests.post(self.URL, headers=headers, data=data)
-                if r.status_code is 200:
-                    return r.text
-                else:
-                    return r.status_code
+                return ApiResult(r)
+
         else:
-            print "not authenticated"
+            return False
+
 
     def addRecipient(self, listid=None, createdfrom=None, sendautoreply=False,
                      updateiffound=False, allowhtml=False, visitorkey=None,
                      contactlists=None, syncfields=None, columns=None):
+        """This function adds one new contact to an existing database."""
 
         if None in (listid, createdfrom, columns):
             return False
@@ -149,25 +140,25 @@ class IBMarketingCloud(object):
         addRecipientNode = SubElement(bodyNode, "AddRecipient")
 
         listIdNode = SubElement(addRecipientNode, "LIST_ID")
-        listIdNode.text = listid
+        listIdNode.text = str(listid)
         createdfromNode = SubElement(addRecipientNode, "CREATED_FROM")
-        createdfromNode.text = createdfrom
+        createdfromNode.text = str(createdfrom)
 
         if sendautoreply:
             sendautoreplyNode = SubElement(addRecipientNode, "SEND_AUTOREPLY")
-            sendautoreplyNode.text = sendautoreply
+            sendautoreplyNode.text = str(sendautoreply)
 
         if updateiffound:
             updateiffoundNode = SubElement(addRecipientNode, "UPDATE_IF_FOUND")
-            updateiffoundNode.text = updateiffound
+            updateiffoundNode.text = str(updateiffound)
 
         if allowhtml:
             allowhtmlNode = SubElement(addRecipientNode, "ALLOW_HTML")
-            allowhtmlNode.text = allowhtml
+            allowhtmlNode.text = str(allowhtml)
 
         if visitorkey:
             visitorkeyNode = SubElement(addRecipientNode, "VISITOR_KEY")
-            visitorkeyNode.text = visitorkey
+            visitorkeyNode.text = str(visitorkey)
 
         if contactlists:
             if isinstance(contactlists, list) or isinstance(contactlists, tuple):
@@ -198,23 +189,16 @@ class IBMarketingCloud(object):
                                     <VALUE>{}</VALUE>""".format(name, value)
                 columnsNode.text = scolumns
 
-        addrecipientxml = etree.tostring(envelopeNode, pretty_print=True, encoding="UTF-8")
-
-        print(addrecipientxml)
-
-
-
-
-
-
+        addrecipientxml = etree.tostring(envelopeNode)
+        return self._runapi(addrecipientxml)
 
 
 
 class ApiResult(object):
 
-    def __init__(self):
-        self._status = None
-        self._message = None
+    def __init__(self, response):
+        self._status = response.status_code
+        self._message = response.text
 
     def __str__(self):
         return self._status
@@ -238,15 +222,13 @@ class ApiResult(object):
 
 
 
-if __name__ == "__main__":
-    inst = IBMarketingCloud()
 
-    apiresult = inst.authenticate(IBMarketingCloud.AUTH_LEGACY, r"c:\code\ibmapi_config_test.ini")
 
-    if apiresult.status == "true":
-        print "api result message: {}".format(apiresult.message)
 
-    inst.addRecipient
+
+
+
+
 
 
 
