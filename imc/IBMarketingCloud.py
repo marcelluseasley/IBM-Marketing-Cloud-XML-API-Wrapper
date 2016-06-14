@@ -130,7 +130,8 @@ class IBMCloud(object):
     def addRecipient(self, listid=None, createdfrom=None, sendautoreply=False,
                      updateiffound=False, allowhtml=False, visitorkey=None,
                      contactlists=None, syncfields=None, columns=None):
-        """This function adds one new contact to an existing database."""
+
+
 
         if None in (listid, createdfrom, columns):
             return False
@@ -199,6 +200,54 @@ class IBMCloud(object):
         logoutXML = etree.tostring(envelope, encoding="UTF-8")
 
         return self._runapi(logoutXML)
+
+
+    def rawRecipientDataExport(self, mailingid=None, reportid=None, campaignid=None,
+                               listid=None, includechildren=False, eventdatestart=None,
+                               eventdateend=None, senddatestart=None, senddateend=None,
+                               exportformat=None, fileencoding=None, exportfilename=None,
+                               email=None, movetoftp=False, private=False, shared=False,
+                               sentmailings=False, sending=False, optinconfirmation=False,
+                               profileconfirmation=False, automated=False, campaignactive=False,
+                               campaigncompleted=False, campaigncancelled=False,
+                               campaignscrapetemplate=False, includetestmailings=False,
+                               alleventtypes=False, sent=False, suppressed=False, opens=False,
+                               clicks=False, optins=False, optouts=False, forwards=False,
+                               attachments=False, conversions=False, clickstreams=False,
+                               hardbounces=False, softbounces=False, replyabuse=False,
+                               replycoa=False, replyother=False, mailblocks=False,
+                               mailingrestrictions=False, includeseeds=False,
+                               includeforwards=False, includeinboxmonitoring=False,
+                               codedtypefields=False, excludedeleted=False, forwardsonly=False,
+                               returnmailingname=False, returnsubject=False,
+                               returncrmcampaignid=False, returnprogramid=False, columns=None):
+        """Raw Recipient Data Export """
+
+        envelopeNode = Element("Envelope")
+        bodyNode = SubElement(envelopeNode, "Body")
+        addRecipientNode = SubElement(bodyNode, "RawRecipientDataExport")
+
+        if mailingid:
+            mailingidNode = SubElement(addRecipientNode, "MAILING_ID")
+            mailingidNode.text = str(mailingid)
+
+        if reportid:
+            reportidNode = SubElement(addRecipientNode, "REPORT_ID")
+            reportidNode.text = str(reportid)
+
+        if campaignid:
+            campaignidNode = SubElement(addRecipientNode, "CAMPAIGN_ID")
+            campaignidNode.text = str(campaignid)
+
+        if listid:
+            listidNode = SubElement(addRecipientNode, "LIST_ID")
+            listidNode.text = str(listid)
+
+        if includechildren:
+            includechildrenNode = SubElement(addRecipientNode, "INCLUDE_CHILDREN")
+            includechildrenNode.text = str(includechildren)
+
+
 
 
 
