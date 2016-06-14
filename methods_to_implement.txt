@@ -1,3 +1,8 @@
+* = implemented
+
+        * Login
+        * Logout
+
 ##### Contact XML Interfaces
     The following section defines the interfaces provided to manage the most common Mailing and Database
     management actions. We refer to these as Contact Actions because each relates directly to one or more
@@ -15,7 +20,7 @@
 ### Database Management Interfaces - Contact
     Database Management Interfaces allow you to invoke Engage functions directly related to database contacts.
 
-        AddRecipient
+        * AddRecipient
         DoubleOptInRecipient
         UpdateRecipient
         OptOutRecipient
